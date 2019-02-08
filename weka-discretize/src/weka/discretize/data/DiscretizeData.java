@@ -10,15 +10,15 @@ import weka.core.Instances;
 import weka.core.OptionHandler;
 import weka.core.converters.CSVLoader;
 import weka.filters.Filter;
+import weka.filters.supervised.attribute.Discretize;
 import weka.filters.unsupervised.attribute.RemoveUseless;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
-public class Discretize {
+public class DiscretizeData {
 
 	private final static String DATA = "data.csv";
-	private static PrintStream err = null;
 
-	public Discretize() {
+	public DiscretizeData() {
 
 	}
 
@@ -33,6 +33,7 @@ public class Discretize {
 		// Print header and instances.
 		System.out.println("\nDataset:\n");
 		System.out.println(instances);
+		preProcessData(instances);
 	}
 
 	public static Instances preProcessData(Instances data) throws Exception {
@@ -46,18 +47,17 @@ public class Discretize {
 		data = Filter.useFilter(data, removeUseless);
 
 		/*
-		 * Remove useless attributes
+		 * Replace missing values
 		 */
 		ReplaceMissingValues fixMissing = new ReplaceMissingValues();
 		fixMissing.setInputFormat(data);
 		data = Filter.useFilter(data, fixMissing);
 
 		/*
-		 * Remove useless attributes
+		 * Discretize data
 		 */
 		Discretize discretizeNumeric = new Discretize();
-		((OptionHandler) discretizeNumeric).setOptions(new String[] { "-O", "-M", "-1.0", "-B", "4", // no of bins
-				"-R", "first-last" }); // range of attributes
+		discretizeNumeric.setOptions(new String[] {"-R", "first-last"});
 		fixMissing.setInputFormat(data);
 		data = Filter.useFilter(data, fixMissing);
 
