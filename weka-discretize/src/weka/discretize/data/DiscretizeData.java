@@ -1,12 +1,13 @@
 package weka.discretize.data;
 
-import java.io.File;
 import java.util.Random;
 
+import weka.attributeSelection.AttributeSelection;
+import weka.attributeSelection.InfoGainAttributeEval;
+import weka.attributeSelection.Ranker;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
-import weka.core.converters.CSVLoader;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.supervised.attribute.Discretize;
@@ -33,13 +34,14 @@ public class DiscretizeData {
 		disc.validate();
 	}
 
-	public void loadDataFile(String arffInput) {
+	public void loadDataFile(String input) {
 		DataSource source = null;
 		try {
-			source = new DataSource(arffInput);
+			source = new DataSource(input);
 			data = source.getDataSet();
-			if (data.classIndex() == -1)
+			if (data.classIndex() == -1) {
 				data.setClassIndex(data.numAttributes() - 1);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -54,7 +56,7 @@ public class DiscretizeData {
 	 * @throws Exception
 	 */
 	public Instances discretizeData() throws Exception {
-		
+
 		// remove useless values
 		RemoveUseless removeUseless = new RemoveUseless();
 		removeUseless.setOptions(new String[] { "-M", "99" });
@@ -69,15 +71,18 @@ public class DiscretizeData {
 		// Discretize data
 		Discretize discretize = new Discretize();
 		discretize.setOptions(new String[] { "-R", "first-last" });
-		fixMissing.setInputFormat(data);
-		data = Filter.useFilter(data, fixMissing);
-
-		// set class index for last attribute in
-		// each line of arff file
-		if (data.classIndex() == -1) {
-			data.setClassIndex(data.numAttributes() - 1);
-		}
-		data.setClassIndex(data.numAttributes() - 1);
+		discretize.setInputFormat(data);
+		data = Filter.useFilter(data, discretize);
+		
+		InfoGainAttributeEval eval = new InfoGainAttributeEval();
+		Ranker ranker = new Ranker();
+		ranker.setOptions(new String[] { "-T", "0.001" });
+		AttributeSelection attSelect = new AttributeSelection();
+		attSelect.setEvaluator(eval);
+		attSelect.setSearch(ranker);
+		attSelect.SelectAttributes(data);
+		data = attSelect.reduceDimensionality(data);
+		System.out.println(data);
 
 		return data;
 	}
@@ -89,7 +94,6 @@ public class DiscretizeData {
 		naiveBayes = new NaiveBayes();
 		try {
 			naiveBayes.buildClassifier(data);
-			System.out.println(data);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -109,8 +113,7 @@ public class DiscretizeData {
 	}
 
 	/**
-	 * Cross-validate model and 
-	 * print summary string
+	 * Cross-validate model and print summary string
 	 */
 	public void validate() {
 		Evaluation eval = null;
