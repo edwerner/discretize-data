@@ -26,14 +26,14 @@ public class DiscretizeData {
 	 */
 	public static void main(String[] args) throws Exception {
 		DiscretizeData disc = new DiscretizeData();
-		disc.loadArff("data.arff");
+		disc.loadDataFile("data.arff");
 		disc.discretizeData();
 		disc.generateModel();
 		disc.saveModel("naiveBayes.model");
 		disc.validate();
 	}
 
-	public void loadArff(String arffInput) {
+	public void loadDataFile(String arffInput) {
 		DataSource source = null;
 		try {
 			source = new DataSource(arffInput);
@@ -73,7 +73,7 @@ public class DiscretizeData {
 		data = Filter.useFilter(data, fixMissing);
 
 		// set class index for last attribute in
-		// each line of CSV file
+		// each line of arff file
 		if (data.classIndex() == -1) {
 			data.setClassIndex(data.numAttributes() - 1);
 		}
@@ -89,13 +89,14 @@ public class DiscretizeData {
 		naiveBayes = new NaiveBayes();
 		try {
 			naiveBayes.buildClassifier(data);
+			System.out.println(data);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Save model
+	 * Serialize naive Bayes model
 	 * 
 	 * @param path
 	 */
@@ -108,7 +109,8 @@ public class DiscretizeData {
 	}
 
 	/**
-	 * Cross-validate model and print summary string
+	 * Cross-validate model and 
+	 * print summary string
 	 */
 	public void validate() {
 		Evaluation eval = null;
