@@ -1,8 +1,6 @@
 package weka.discretize.data;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.util.Random;
 
 import weka.classifiers.Evaluation;
@@ -12,52 +10,30 @@ import weka.core.converters.CSVLoader;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.supervised.attribute.Discretize;
+import weka.filters.unsupervised.attribute.RemoveUseless;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
 public class DiscretizeData {
-	static Instances data = null;
-	NaiveBayes nb;
+	private static Instances data;
+	private NaiveBayes naiveBayes;
 
-	public static void main(String[] args) {
-		DiscretizeData test = new DiscretizeData();
-		test.loadFile("data.arff");
-		test.generateModel();
-		test.saveModel("nb.model");
-		test.crossValidate();
-		try {
-			discretizeData();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	/**
+	 * Instantiate DiscretizeData class, discretize data loaded from file, generate
+	 * and save naive Bayes model and validate model
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		DiscretizeData disc = new DiscretizeData();
+		disc.loadArff("data.arff");
+		disc.discretizeData();
+		disc.generateModel();
+		disc.saveModel("naiveBayes.model");
+		disc.validate();
 	}
 
-	public static void discretizeData() throws Exception {
-		CSVLoader loader = new CSVLoader();
-		loader.setSource(new File("data.csv"));
-		Instances instances = loader.getDataSet();
-		// Make the last attribute be the class
-		instances.setClassIndex(instances.numAttributes() - 1);
-
-		/*
-		 * Replace missing values
-		 */
-		ReplaceMissingValues fixMissing = new ReplaceMissingValues();
-		fixMissing.setInputFormat(data);
-		data = Filter.useFilter(data, fixMissing);
-
-		/*
-		 * Discretize data
-		 */
-		Discretize discretizeNumeric = new Discretize();
-		discretizeNumeric.setOptions(new String[] { "-R", "first-last" });
-		fixMissing.setInputFormat(data);
-		data = Filter.useFilter(data, fixMissing);
-
-		// Make the last attribute be the class
-		instances.setClassIndex(instances.numAttributes() - 1);
-	}
-
-	public void loadFile(String arffInput) {
+	public void loadArff(String arffInput) {
 		DataSource source = null;
 		try {
 			source = new DataSource(arffInput);
@@ -69,28 +45,76 @@ public class DiscretizeData {
 		}
 	}
 
+	/**
+	 * Discretize data loaded from CSV file, set class index for last attribute in
+	 * file, replace missing values and discretize data and set options and import
+	 * format for data
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public Instances discretizeData() throws Exception {
+		
+		// remove useless values
+		RemoveUseless removeUseless = new RemoveUseless();
+		removeUseless.setOptions(new String[] { "-M", "99" });
+		removeUseless.setInputFormat(data);
+		data = Filter.useFilter(data, removeUseless);
+
+		// replace missing values
+		ReplaceMissingValues fixMissing = new ReplaceMissingValues();
+		fixMissing.setInputFormat(data);
+		data = Filter.useFilter(data, fixMissing);
+
+		// Discretize data
+		Discretize discretize = new Discretize();
+		discretize.setOptions(new String[] { "-R", "first-last" });
+		fixMissing.setInputFormat(data);
+		data = Filter.useFilter(data, fixMissing);
+
+		// set class index for last attribute in
+		// each line of CSV file
+		if (data.classIndex() == -1) {
+			data.setClassIndex(data.numAttributes() - 1);
+		}
+		data.setClassIndex(data.numAttributes() - 1);
+
+		return data;
+	}
+
+	/**
+	 * Generate naive Bayes classifier
+	 */
 	public void generateModel() {
-		nb = new NaiveBayes();
+		naiveBayes = new NaiveBayes();
 		try {
-			nb.buildClassifier(data);
+			naiveBayes.buildClassifier(data);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void saveModel(String modelPath) {
+	/**
+	 * Save model
+	 * 
+	 * @param path
+	 */
+	public void saveModel(String path) {
 		try {
-			weka.core.SerializationHelper.write(modelPath, nb);
+			weka.core.SerializationHelper.write(path, naiveBayes);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void crossValidate() {
+	/**
+	 * Cross-validate model and print summary string
+	 */
+	public void validate() {
 		Evaluation eval = null;
 		try {
 			eval = new Evaluation(data);
-			eval.crossValidateModel(nb, data, 10, new Random(1));
+			eval.crossValidateModel(naiveBayes, data, 10, new Random(1));
 			System.out.println(eval.toSummaryString());
 		} catch (Exception e) {
 			e.printStackTrace();
