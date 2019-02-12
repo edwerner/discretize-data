@@ -15,7 +15,7 @@ import weka.filters.supervised.attribute.Discretize;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
 public class DiscretizeData {
-	Instances data = null;
+	static Instances data = null;
 	NaiveBayes nb;
 
 	public static void main(String[] args) {
@@ -24,9 +24,14 @@ public class DiscretizeData {
 		test.generateModel();
 		test.saveModel("nb.model");
 		test.crossValidate();
+		try {
+			discretizeData();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
-	public void discretizeData() throws Exception {
+	public static void discretizeData() throws Exception {
 		CSVLoader loader = new CSVLoader();
 		loader.setSource(new File("data.csv"));
 		Instances instances = loader.getDataSet();
