@@ -20,8 +20,10 @@ public class DiscretizeData {
 	private NaiveBayes naiveBayes;
 
 	/**
-	 * Instantiate DiscretizeData class, discretize data loaded from file, generate
-	 * and save naive Bayes model and validate model.
+	 * Instantiate DiscretizeData class, 
+	 * discretize data loaded from file, 
+	 * generate and save naive Bayes model
+	 * and validate model.
 	 *
 	 * @param args the arguments
 	 * @throws Exception the exception
@@ -54,8 +56,10 @@ public class DiscretizeData {
 	}
 
 	/**
-	 * Discretize data loaded from CSV file, set class index for last attribute in
-	 * file, replace missing values and discretize data and set options and import
+	 * Discretize data loaded from CSV file, 
+	 * set class index for last attribute in
+	 * file, replace missing values and 
+	 * discretize data and set options and import
 	 * format for data.
 	 *
 	 * @return the instances
