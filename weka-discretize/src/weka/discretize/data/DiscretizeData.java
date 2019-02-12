@@ -2,9 +2,6 @@ package weka.discretize.data;
 
 import java.util.Random;
 
-import weka.attributeSelection.AttributeSelection;
-import weka.attributeSelection.InfoGainAttributeEval;
-import weka.attributeSelection.Ranker;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
@@ -14,26 +11,35 @@ import weka.filters.supervised.attribute.Discretize;
 import weka.filters.unsupervised.attribute.RemoveUseless;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
+/**
+ * The Class DiscretizeData.
+ */
 public class DiscretizeData {
+	
 	private static Instances data;
 	private NaiveBayes naiveBayes;
 
 	/**
 	 * Instantiate DiscretizeData class, discretize data loaded from file, generate
-	 * and save naive Bayes model and validate model
-	 * 
-	 * @param args
-	 * @throws Exception
+	 * and save naive Bayes model and validate model.
+	 *
+	 * @param args the arguments
+	 * @throws Exception the exception
 	 */
 	public static void main(String[] args) throws Exception {
-		DiscretizeData disc = new DiscretizeData();
-		disc.loadDataFile("data.arff");
-		disc.discretizeData();
-		disc.generateModel();
-		disc.saveModel("naiveBayes.model");
-		disc.validate();
+		DiscretizeData discretize = new DiscretizeData();
+		discretize.loadDataFile("data.arff");
+		discretize.discretizeData();
+		discretize.generateModel();
+		discretize.saveModel("naiveBayes.model");
+		discretize.crossValidate();
 	}
 
+	/**
+	 * Load data file.
+	 *
+	 * @param input the input
+	 */
 	public void loadDataFile(String input) {
 		DataSource source = null;
 		try {
@@ -50,45 +56,36 @@ public class DiscretizeData {
 	/**
 	 * Discretize data loaded from CSV file, set class index for last attribute in
 	 * file, replace missing values and discretize data and set options and import
-	 * format for data
-	 * 
-	 * @return
-	 * @throws Exception
+	 * format for data.
+	 *
+	 * @return the instances
+	 * @throws Exception the exception
 	 */
 	public Instances discretizeData() throws Exception {
 
 		// remove useless values
-		RemoveUseless removeUseless = new RemoveUseless();
-		removeUseless.setOptions(new String[] { "-M", "99" });
-		removeUseless.setInputFormat(data);
-		data = Filter.useFilter(data, removeUseless);
+		RemoveUseless remove = new RemoveUseless();
+		remove.setOptions(new String[] { "-M", "99" });
+		remove.setInputFormat(data);
+		data = Filter.useFilter(data, remove);
 
 		// replace missing values
-		ReplaceMissingValues fixMissing = new ReplaceMissingValues();
-		fixMissing.setInputFormat(data);
-		data = Filter.useFilter(data, fixMissing);
+		ReplaceMissingValues replace = new ReplaceMissingValues();
+		replace.setInputFormat(data);
+		data = Filter.useFilter(data, replace);
 
 		// Discretize data
 		Discretize discretize = new Discretize();
 		discretize.setOptions(new String[] { "-R", "first-last" });
 		discretize.setInputFormat(data);
 		data = Filter.useFilter(data, discretize);
-		
-		InfoGainAttributeEval eval = new InfoGainAttributeEval();
-		Ranker ranker = new Ranker();
-		ranker.setOptions(new String[] { "-T", "0.001" });
-		AttributeSelection attSelect = new AttributeSelection();
-		attSelect.setEvaluator(eval);
-		attSelect.setSearch(ranker);
-		attSelect.SelectAttributes(data);
-		data = attSelect.reduceDimensionality(data);
-		System.out.println(data);
 
 		return data;
 	}
 
 	/**
-	 * Generate naive Bayes classifier
+	 * Generate and build naive Bayes
+	 * classifier.
 	 */
 	public void generateModel() {
 		naiveBayes = new NaiveBayes();
@@ -100,9 +97,9 @@ public class DiscretizeData {
 	}
 
 	/**
-	 * Serialize naive Bayes model
-	 * 
-	 * @param path
+	 * Serialize naive Bayes model.
+	 *
+	 * @param path the path
 	 */
 	public void saveModel(String path) {
 		try {
@@ -113,14 +110,15 @@ public class DiscretizeData {
 	}
 
 	/**
-	 * Cross-validate model and print summary string
+	 * Cross-validate model and
+	 * print validation string.
 	 */
-	public void validate() {
-		Evaluation eval = null;
+	public void crossValidate() {
+		Evaluation evaluation = null;
 		try {
-			eval = new Evaluation(data);
-			eval.crossValidateModel(naiveBayes, data, 10, new Random(1));
-			System.out.println(eval.toSummaryString());
+			evaluation = new Evaluation(data);
+			evaluation.crossValidateModel(naiveBayes, data, 10, new Random(1));
+			System.out.println(evaluation.toSummaryString());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
