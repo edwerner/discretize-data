@@ -65,7 +65,7 @@ public class DiscretizeData {
 	 * @return the instances
 	 * @throws Exception the exception
 	 */
-	public Instances discretizeData() throws Exception {
+	public void discretizeData() throws Exception {
 
 		// remove useless values
 		RemoveUseless remove = new RemoveUseless();
@@ -83,8 +83,6 @@ public class DiscretizeData {
 		discretize.setOptions(new String[] { "-R", "first-last" });
 		discretize.setInputFormat(data);
 		data = Filter.useFilter(data, discretize);
-
-		return data;
 	}
 
 	/**
